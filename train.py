@@ -16,7 +16,7 @@ CHANNELS = 3
 MAX_STEPS = 120000
 KEEP_PROB = 0.9
 
-initial_lr = 2e-5
+initial_lr = 2e-2
 weight_decay = 1e-5
 
 saved_ckpt_path = './checkpoint/'

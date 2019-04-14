@@ -36,27 +36,29 @@ def flip_randomly_left_right_image_with_annotation(image_tensor, annotation_tens
     randomly_flipped_annotation = tf.squeeze(randomly_flipped_annotation, -1)
     return randomly_flipped_img, randomly_flipped_annotation
 
-def random_resize(batch_image, batch_anno, mmin=0.5, mmax=2):
+def random_resize(batch_image_0, batch_image, batch_anno, mmin=0.5, mmax=2):
     rand_var = tf.random_uniform(shape=[],
                                  minval=mmin,
                                  maxval=mmax)
     scaled_shape = [tf.cast(tf.round(rand_var * HEIGHT), tf.int32), tf.cast(tf.round(rand_var * WIDTH), tf.int32)]
 
+    batch_image_0 = tf.image.resize_nearest_neighbor(batch_image_0, scaled_shape)
     batch_image = tf.image.resize_nearest_neighbor(batch_image, scaled_shape)
 
     batch_anno = tf.expand_dims(batch_anno, -1)
     batch_anno = tf.image.resize_nearest_neighbor(batch_anno, scaled_shape)
     batch_anno = tf.squeeze(batch_anno, -1)
 
-    return batch_image, batch_anno
+    return batch_image_0, batch_image, batch_anno
 
-def random_crop(batch_image, batch_anno):
+def random_crop(batch_image_0, batch_image, batch_anno):
 
     seed = random.randint(0, 1e10)
     input_shape = batch_image.get_shape().as_list()
+    batch_image_0 = tf.random_crop(batch_image_0, [input_shape[0], CROP_HEIGHT, CROP_WIDTH, 3], seed=seed)
     batch_image = tf.random_crop(batch_image, [input_shape[0], CROP_HEIGHT, CROP_WIDTH, 3], seed=seed)
     batch_anno = tf.random_crop(batch_anno, [input_shape[0], CROP_HEIGHT, CROP_WIDTH], seed=seed)
-    return batch_image, batch_anno
+    return batch_image_0, batch_image, batch_anno
 
 def augmentation_standardization(image, anno, type):
 
@@ -74,14 +76,14 @@ def augmentation_standardization(image, anno, type):
 
     return image, anno
 
-def augmentation_scale(image, anno, mmin, mmax, type):
+def augmentation_scale(image_0, image, anno, mmin, mmax, type):
 
     if type == 'train' or type == 'trainval':
-        image, anno = random_resize(image, anno, mmin, mmax)
+        image_0, image, anno = random_resize(image_0, image, anno, mmin, mmax)
 
-    image, anno = random_crop(image, anno)
+    image_0, image, anno = random_crop(image_0, image, anno)
 
-    return image, anno
+    return image_0, image, anno
 
 def read_and_decode(filelist):
     filename_queue = tf.train.string_input_producer(filelist)
@@ -139,26 +141,27 @@ def read_batch(batch_size, type='train'):
                                                                capacity=128, min_after_dequeue=64, num_threads=4)
 
     # print(image_batch, anno_batch)
-    image_batch, anno_batch = augmentation_scale(image_batch, anno_batch, mmin=0.5, mmax=2.0, type=type)
+    image_0_batch, image_batch, anno_batch = augmentation_scale(image_0_batch, image_batch, anno_batch, mmin=0.5, mmax=2.0, type=type)
     return image_0_batch, image_batch, anno_batch, filename
 
 if __name__ == '__main__':
     BATCH_SIZE = 4
-    image_batch, anno_batch, filename = read_batch(BATCH_SIZE, type='test')
+    image_0, image_batch, anno_batch, filename = read_batch(BATCH_SIZE, type='train')
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-        b_image, b_anno, b_filename = sess.run([image_batch, anno_batch, filename])
+        b_image_0, b_image, b_anno, b_filename = sess.run([image_0, image_batch, anno_batch, filename])
+        print(b_image_0.shape)
         print(b_image.shape)
         print(b_anno.shape)
         print(b_filename)
 
-        b_image, b_anno, b_filename = sess.run([image_batch, anno_batch, filename])
-        print(b_image.shape)
-        print(b_anno.shape)
-        print(b_filename)
+        print(b_image_0)
+        print(b_image)
+        print(b_anno)
+        print(np.unique(b_anno))
 
         coord.request_stop()
 

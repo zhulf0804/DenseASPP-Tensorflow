@@ -76,7 +76,8 @@ def to_tfrecord(index):
                     anno_data_np = np.array(anno_data)
                     seg_height, seg_width = anno_data_np.shape
                     anno_data_np = Labels.id_to_trainId_map_func(anno_data_np)
-
+                    anno_data_np = np.array(anno_data_np, dtype=np.uint8)
+                    anno_data = Image.fromarray(anno_data_np)
                     assert seg_height == height
                     assert seg_width == width
                     raw_img_data = raw_img_data.tobytes()
