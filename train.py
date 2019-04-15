@@ -9,14 +9,15 @@ import model.denseASPP as denseASPP
 import model.densenet as DenseNet
 import input_data
 
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 HEIGHT = 512
 WIDTH = 512
 CHANNELS = 3
-MAX_STEPS = 120000
-KEEP_PROB = 0.9
+MAX_STEPS = 80*3000
+# 6000 steps for one epoch
+KEEP_PROB = 1.0
 
-initial_lr = 2e-2
+initial_lr = 3e-4
 weight_decay = 1e-5
 
 saved_ckpt_path = './checkpoint/'
@@ -50,7 +51,7 @@ with tf.name_scope('learning_rate'):
     lr = tf.Variable(initial_lr, dtype=tf.float32)
     tf.summary.scalar('learning_rate', lr)
 
-optimizer = tf.train.AdamOptimizer(lr).minimize(loss)
+optimizer = tf.train.AdamOptimizer(lr).minimize(loss_all)
 
 merged = tf.summary.merge_all()
 
@@ -95,13 +96,18 @@ with tf.Session() as sess:
         train_loss_val_all, train_loss_val = sess.run([loss_all, loss], feed_dict={x: b_image, y: b_anno, keep_prob: 1.0})
         test_loss_val_all, test_loss_val = sess.run([loss_all, loss], feed_dict={x: b_image_test, y: b_anno_test, keep_prob: 1.0})
 
+        learning_rate = sess.run(lr)
+
         if i % 10 == 0:
             print(
-                "train step: %d, train loss all: %f, train loss: %f, test loss all: %f, test loss: %f" % (
-                i, train_loss_val_all, train_loss_val, test_loss_val_all, test_loss_val))
+                "train step: %d, learning rate: %f, train loss all: %f, train loss: %f, test loss all: %f, test loss: %f" % (
+                i, learning_rate, train_loss_val_all, train_loss_val, test_loss_val_all, test_loss_val))
 
-        if i % 2000 == 0:
+        if i % 6000 == 0:
             saver.save(sess, os.path.join(saved_ckpt_path, 'denseASPP.model'), global_step=i)
+
+        if i != 0 and i % 3000 == 0:
+            sess.run(tf.assign(lr, pow((1 - 1.0*i/MAX_STEPS), 0.9) * lr))
 
     coord.request_stop()
     coord.join(threads)

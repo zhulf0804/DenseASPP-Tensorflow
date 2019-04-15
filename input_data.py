@@ -146,13 +146,14 @@ def read_batch(batch_size, type='train'):
 
 if __name__ == '__main__':
     BATCH_SIZE = 4
-    image_0, image_batch, anno_batch, filename = read_batch(BATCH_SIZE, type='train')
+    image_0, image_batch, anno_batch, filename = read_batch(BATCH_SIZE, type='val')
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
         b_image_0, b_image, b_anno, b_filename = sess.run([image_0, image_batch, anno_batch, filename])
+        '''
         print(b_image_0.shape)
         print(b_image.shape)
         print(b_anno.shape)
@@ -162,6 +163,11 @@ if __name__ == '__main__':
         print(b_image)
         print(b_anno)
         print(np.unique(b_anno))
+        '''
+        for i in range(BATCH_SIZE):
+            cv2.imwrite('test/%d_img.png'%i, b_image_0[i])
+            cv2.imwrite('test/%d_img_2.png' % i, b_image[i])
+            cv2.imwrite('test/%d_anno.png' % i, 10*b_anno[i])
 
         coord.request_stop()
 

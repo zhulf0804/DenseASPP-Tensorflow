@@ -96,6 +96,7 @@ def transition_layer(input, train, keep_prob, rate, pool=True):
     input_shape = input.get_shape().as_list()
     with tf.name_scope('transition_layer'):
         input = bn_layer(input, train)
+        input = tf.nn.relu(input)
         weights = weight_variable(shape = [1, 1, input_shape[-1], tf.cast(0.5 * input_shape[-1], tf.int32)])
         if pool:
             input = tf.nn.conv2d(input, weights, [1, 1, 1, 1], padding='SAME')
@@ -118,6 +119,8 @@ def densenet_121(input, keep_prob, train):
     with tf.name_scope('initial'):
         weights = weight_variable(shape=[7, 7, input_shape[-1], 2*k])
         input = tf.nn.conv2d(input, weights, [1, 2, 2, 1], padding='SAME')
+        input = bn_layer(input, train)
+        input = tf.nn.relu(input)
         input = tf.nn.max_pool(input, [1, 3, 3, 1], [1, 2, 2, 1], padding='SAME')
 
     with tf.name_scope("dense_blocks"):

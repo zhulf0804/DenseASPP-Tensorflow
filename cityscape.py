@@ -73,10 +73,10 @@ if __name__ == '__main__':
     get_anno_file_list()
 
 
-    f = open(SAVED_ANNO_TRAIN_FILE, 'r')
-    files = f.readlines()
-    for file in files:
-        get_img_infor(file.strip())
+    #f = open(SAVED_ANNO_TRAIN_FILE, 'r')
+    #files = f.readlines()
+    #for file in files:
+    #    get_img_infor(file.strip())
 
 
 

@@ -16,6 +16,9 @@ import Cityscape.labels as Labels
 _NUM_SHARDS = 4
 types = cityscape.types
 CITYSCAPE_DIR = cityscape.CITYSCAPE_DIR
+CITYSCAPE_IMG_DIR = cityscape.CITYSCAPE_IMG_DIR
+CITYSCAPE_ANNO_DIR = cityscape.CITYSCAPE_ANNO_DIR
+
 SAVED_IMG_FILES = cityscape.SAVED_IMG_FILES
 SAVED_ANNO_FILES = cityscape.SAVED_ANNO_FILES
 
@@ -51,7 +54,10 @@ def to_tfrecord(index):
     f_img = open(img_file_list, 'r')
     f_anno = open(anno_file_list, 'r')
     img_filenames = f_img.readlines()
-    anno_filenames = f_anno.readlines()
+    anno_filenames = [filename.replace(CITYSCAPE_IMG_DIR, CITYSCAPE_ANNO_DIR) for filename in img_filenames]
+    anno_filenames = [filename.replace('_leftImg8bit.png', '_gtFine_labelIds.png') for filename in anno_filenames]
+
+    # print(anno_filenames)
 
     assert len(img_filenames) == len(anno_filenames)
 

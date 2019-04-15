@@ -43,6 +43,8 @@ def denseASPP_block(input, train):
     n = tf.cast(c0 / 8, tf.int32) # output feature maps of denseASPP layer
     n0 = tf.cast(c0 / 2, tf.int32) # input feature maps of denseASPP layer
 
+    input_0 = input
+
     for layer in range(1, denseASPP_layers_num + 1):
 
         if layer == 1:
@@ -60,7 +62,8 @@ def denseASPP_block(input, train):
 
         output = denseASPP_layer(input_compress, denseASPP_rates[layer-1], n, train)
 
-        input = tf.concat([input, output], axis=-1)
+        input_0 = tf.concat([input_0, output], axis=-1)
+        input = input_0
 
     return input
 
@@ -68,30 +71,65 @@ def denseASPP_block(input, train):
 def denseASPP(input, keep_prob, train=True):
 
     input = densenet.densenet_121(input, keep_prob, train)
+
+    input = densenet.bn_layer(input, train)
+
     input = denseASPP_block(input, train)
 
     with tf.name_scope("segmentation"):
         input_shape = input.get_shape().as_list()
+
+        ####
+        #input = densenet.bn_layer(input, train)
+        #input = tf.nn.relu(input)
+        ####
+
         weight_1 = densenet.weight_variable([1, 1, input_shape[-1], CLASSES])
         input = tf.nn.conv2d(input, weight_1, [1, 1, 1, 1], padding='SAME')
 
+    with tf.name_scope("upsamling"):
+        input_shape = input.get_shape().as_list()
+        input = tf.image.resize_bilinear(input, [8*input_shape[1], 8*input_shape[2]])
+
+
+    '''
     with tf.name_scope("upsampling"):
 
         input_shape = input.get_shape().as_list()
+
+        ####
+        input = densenet.bn_layer(input, train)
+        #input = tf.nn.relu(input)
+        ####
+
         weight_2_1 = densenet.weight_variable([2, 2, CLASSES, CLASSES])
         input = tf.nn.conv2d_transpose(input, weight_2_1, [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]], [1, 2, 2, 1], padding='SAME')
 
+
         input_shape = input.get_shape().as_list()
+
+        ####
+        input = densenet.bn_layer(input, train)
+        # input = tf.nn.relu(input)
+        ####
+
         weight_2_2 = densenet.weight_variable([2, 2, CLASSES, CLASSES])
         input = tf.nn.conv2d_transpose(input, weight_2_2,
                                        [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]],
                                        [1, 2, 2, 1], padding='SAME')
 
         input_shape = input.get_shape().as_list()
+
+        ####
+        # input = densenet.bn_layer(input, train)
+        # input = tf.nn.relu(input)
+        ####
+
         weight_2_3 = densenet.weight_variable([2, 2, CLASSES, CLASSES])
         input = tf.nn.conv2d_transpose(input, weight_2_3,
                                        [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]],
                                        [1, 2, 2, 1], padding='SAME')
+    '''
 
     output = input
     return output
