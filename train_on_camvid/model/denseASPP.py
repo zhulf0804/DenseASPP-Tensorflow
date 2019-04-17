@@ -9,6 +9,7 @@ import densenet
 
 denseASPP_layers_num = 5
 denseASPP_rates = [3, 6, 12, 18, 24]
+#denseASPP_rates = [1, 3, 3, 6, 6]
 
 CLASSES = densenet.CLASSES
 
@@ -92,7 +93,7 @@ def denseASPP(input, keep_prob, train=True):
 
     with tf.name_scope("upsamling"):
         input_shape = input.get_shape().as_list()
-        input = tf.image.resize_bilinear(input, [8*input_shape[1], 8*input_shape[2]])
+        input = tf.image.resize_bilinear(input, [4*input_shape[1], 4*input_shape[2]])
 
 
     '''

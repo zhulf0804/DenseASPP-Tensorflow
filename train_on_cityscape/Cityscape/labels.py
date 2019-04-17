@@ -111,3 +111,17 @@ id_to_trainId_map_func = np.vectorize(id_to_trainId.get)
 
 # trainId2Color
 trainId2Color   = { label.trainId : label.color for label in reversed(labels) }
+
+def get_name():
+    names = []
+    for i in range(19):
+        for label in labels:
+
+            if int(label.trainId) == i:
+                names.append(label.name)
+                continue
+    return names
+
+if __name__ == '__main__':
+    names = get_name()
+    print(names)

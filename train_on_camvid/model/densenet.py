@@ -10,8 +10,8 @@ CLASSES = 12
 dense_blocks_num = 4
 k = 32
 L = 121
-layers = [6, 12, 24, 16]
-
+#layers = [6, 12, 24, 16]
+layers = [3, 6, 12, 8]
 
 '''
 layers * 2  + (dense_blocks_num - 1) + 1(init) + 1(fc)  
@@ -127,10 +127,12 @@ def densenet_121(input, keep_prob, train):
         for i in range(1, 1 + dense_blocks_num):
             with tf.name_scope("dense_block_%d" % i):
                 input = dense_block(input, k, layers[i-1], train, keep_prob)
-                if i == dense_blocks_num - 2:
+                if i == dense_blocks_num - 3:
                     input = transition_layer(input, train, keep_prob, rate=2, pool=False)
-                elif i == dense_blocks_num - 1:
+                elif i == dense_blocks_num - 2:
                     input = transition_layer(input, train, keep_prob, rate=4, pool=False)
+                elif i == dense_blocks_num - 1:
+                    input = transition_layer(input, train, keep_prob, rate=8, pool=False)
                 elif i == dense_blocks_num:
                     continue
                 else:

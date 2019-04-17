@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import model.denseASPP as denseASPP
 import model.densenet as DenseNet
 import input_data
+import utils.utils as Utils
 
 BATCH_SIZE = 1
 HEIGHT = 360
@@ -17,7 +18,7 @@ WIDTH = 480
 CLASSES = DenseNet.CLASSES
 saved_ckpt_path = './checkpoint/'
 saved_prediction = './pred/'
-prediction_on = 'test' # 'train', 'val' or 'test'
+prediction_on = 'train' # 'train', 'val' or 'test'
 
 classes = ['Sky', 'Building', 'Pole', 'Road', 'Pavement', 'Tree', 'SignSymbol', 'Fence', 'Car', 'Pedestrian', 'Bicyclist','Background']
 cmap = np.array([[128, 128, 128],
@@ -59,7 +60,7 @@ logits = denseASPP.denseASPP(x, keep_prob, train=False)
 with tf.name_scope('prediction_and_miou'):
 
     prediction = tf.argmax(logits, axis=-1, name='predictions')
-    mIoU = tf.metrics.mean_iou(y, prediction, CLASSES, name='mIoU')
+    #mIoU = Utils.cal_batch_mIoU(prediction, y, CLASSES)
 
 
 with tf.Session() as sess:
@@ -67,7 +68,7 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     saver = tf.train.Saver()
 
-    saver.restore(sess, './checkpoint/denseASPP.model-6000')
+    saver.restore(sess, './checkpoint/denseASPP.model-20000')
 
     #ckpt = tf.train.get_checkpoint_state(saved_ckpt_path)
     #if ckpt and ckpt.model_checkpoint_path:
@@ -80,7 +81,9 @@ with tf.Session() as sess:
     for i in range(2):
         b_image, b_anno, b_filename = sess.run([image_batch, anno_batch, filename])
         b_image_0, b_anno = input_data.aug_std(b_image, b_anno, type='test')
-        pred, mIoU_val = sess.run([prediction, mIoU], feed_dict={x: b_image_0, y: b_anno, keep_prob: 1.0})
+        pred = sess.run(prediction, feed_dict={x: b_image_0, y: b_anno, keep_prob: 1.0})
+
+        mIoU_val, IoU_val = Utils.cal_batch_mIoU(pred, b_anno, CLASSES)
 
         # save raw image, annotation, and prediction
         pred = pred.astype(np.uint8)
@@ -101,7 +104,8 @@ with tf.Session() as sess:
         anno.save(os.path.join(saved_prediction, basename + '_anno.png'))
         pred.save(os.path.join(saved_prediction, basename + '_pred.png'))
 
-        print("%s.png: prediction saved in %s, mIoU value is %f" % (basename, saved_prediction, mIoU_val[0]))
+        print("%s.png: prediction saved in %s, mIoU value is %2f" % (basename, saved_prediction, mIoU_val))
+        print(IoU_val)
 
 
     coord.request_stop()

@@ -58,24 +58,37 @@ def random_resize(batch_image_0, batch_image, batch_anno, mmin=0.5, mmax=2):
 
 def random_crop(batch_image_0, batch_image, batch_anno):
 
+    '''
     seed = random.randint(0, 1e10)
     input_shape = batch_image.get_shape().as_list()
     batch_image_0 = tf.random_crop(batch_image_0, [input_shape[0], CROP_HEIGHT, CROP_WIDTH, 3], seed=seed)
     batch_image = tf.random_crop(batch_image, [input_shape[0], CROP_HEIGHT, CROP_WIDTH, 3], seed=seed)
     batch_anno = tf.random_crop(batch_anno, [input_shape[0], CROP_HEIGHT, CROP_WIDTH], seed=seed)
     return batch_image_0, batch_image, batch_anno
+    '''
+    x_st = np.random.randint(low=0, high=512)
+    y_st = np.random.randint(low=0, high=1536)
+
+    input_shape = batch_image.get_shape().as_list()
+    batch_image_0 = tf.slice(batch_image_0, [0, x_st, y_st, 0], [input_shape[0], CROP_HEIGHT, CROP_WIDTH, 3])
+    batch_image = tf.slice(batch_image, [0, x_st, y_st, 0], [input_shape[0], CROP_HEIGHT, CROP_WIDTH, 3])
+    batch_anno = tf.slice(batch_anno, [0, x_st, y_st], [input_shape[0], CROP_HEIGHT, CROP_WIDTH])
+
+    return batch_image_0, batch_image, batch_anno
 
 def augmentation_standardization(image_0, image, anno, type):
 
     image = tf.cast(image, tf.float32)
 
-    if type == 'train' or type == 'val':
+    #if type == 'train' or type == 'val':
 
-        image_0, image, anno = flip_randomly_left_right_image_with_annotation(image_0, image, anno)
+        #image_0, image, anno = flip_randomly_left_right_image_with_annotation(image_0, image, anno)
         #image = tf.image.random_brightness(image, max_delta=10)
 
     image = tf.image.per_image_standardization(image)
-
+    #image /= 255
+    #image -= 0.5
+    image_0 = tf.reshape(image_0, [HEIGHT, WIDTH, 3])
     image = tf.reshape(image, [HEIGHT, WIDTH, 3])
     anno = tf.reshape(anno, [HEIGHT, WIDTH])
 
@@ -85,6 +98,15 @@ def augmentation_scale(image_0, image, anno, mmin, mmax, type):
 
     #if type == 'train' or type == 'val':
     #    image_0, image, anno = random_resize(image_0, image, anno, mmin, mmax)
+
+    ''' for resize to small size
+    scaled_shape = [tf.cast(tf.round(0.25 * HEIGHT), tf.int32), tf.cast(tf.round(0.25 * WIDTH), tf.int32)]
+    image_0 = tf.image.resize_bilinear(image_0, scaled_shape)
+    image = tf.image.resize_bilinear(image, scaled_shape)
+    anno = tf.expand_dims(anno, -1)
+    anno = tf.image.resize_nearest_neighbor(anno, scaled_shape)
+    anno = tf.squeeze(anno, axis=-1)
+    '''
 
     image_0, image, anno = random_crop(image_0, image, anno)
 
@@ -172,7 +194,7 @@ if __name__ == '__main__':
         print(np.unique(b_anno))
         for i in range(BATCH_SIZE):
             cv2.imwrite('test/%d_img.png'%i, b_image_0[i])
-            cv2.imwrite('test/%d_img_2.png' % i, 100 * (1 + b_image[i]))
+            cv2.imwrite('test/%d_img_2.png' % i, 255 * (0.5 + b_image[i]))
             cv2.imwrite('test/%d_anno.png' % i, 10*b_anno[i])
 
         coord.request_stop()

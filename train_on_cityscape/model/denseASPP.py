@@ -12,7 +12,7 @@ denseASPP_rates = [3, 6, 12, 18, 24]
 
 CLASSES = densenet.CLASSES
 
-def denseASPP_layer(input, rate, n, train):
+def denseASPP_layer(input, rate, n, train, keep_prob):
     '''
 
     :param input: input feature map
@@ -32,10 +32,11 @@ def denseASPP_layer(input, rate, n, train):
         ####
 
         input = tf.nn.atrous_conv2d(input, weight_3, rate=rate, padding='SAME')
+        input = tf.nn.dropout(input, keep_prob=keep_prob)
 
     return input
 
-def denseASPP_block(input, train):
+def denseASPP_block(input, train, keep_prob):
 
     input_shape = input.get_shape().as_list()
 
@@ -61,8 +62,9 @@ def denseASPP_block(input, train):
 
                 weight_1 = densenet.weight_variable([1, 1, input_shape[-1], n0])
                 input_compress = tf.nn.conv2d(input, weight_1, [1, 1, 1, 1], padding='SAME')
+                input_compress = tf.nn.dropout(input_compress, keep_prob=keep_prob)
 
-            output = denseASPP_layer(input_compress, denseASPP_rates[layer-1], n, train)
+            output = denseASPP_layer(input_compress, denseASPP_rates[layer-1], n, train, keep_prob)
 
             input_0 = tf.concat([input_0, output], axis=-1)
             input = input_0
@@ -76,7 +78,7 @@ def denseASPP(input, keep_prob, train=True):
         input = densenet.densenet_121(input, keep_prob, train)
     with tf.name_scope("denseASPP"):
         input = densenet.bn_layer(input, train)
-        input = denseASPP_block(input, train)
+        input = denseASPP_block(input, train, keep_prob)
 
     with tf.name_scope("segmentation"):
         input_shape = input.get_shape().as_list()

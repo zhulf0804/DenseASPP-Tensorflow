@@ -10,14 +10,16 @@ import matplotlib.pyplot as plt
 import model.denseASPP as denseASPP
 import Cityscape.labels as Labels
 import input_data
+import utils.utils as Utils
 
 BATCH_SIZE = 1
-HEIGHT = 360
-WIDTH = 480
+HEIGHT = 512
+WIDTH = 512
 CLASSES = denseASPP.CLASSES
 saved_ckpt_path = './checkpoint/'
 saved_prediction = './pred/'
-prediction_on = 'test' # 'train', 'val' or 'test'
+prediction_on = 'val' # 'train', 'val' or 'test'
+
 
 cmap = Labels.trainId2Color
 cmap[19] = (0, 0, 0) # add ignore class color
@@ -34,7 +36,7 @@ def color_gray(image):
     return return_img
 
 
-image_batch, anno_batch, filename = input_data.read_batch(BATCH_SIZE, type=prediction_on)
+image_batch_0, image_batch, anno_batch, filename = input_data.read_batch(BATCH_SIZE, type=prediction_on)
 
 
 with tf.name_scope("input"):
@@ -56,7 +58,7 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     saver = tf.train.Saver()
 
-    saver.restore(sess, './checkpoint/denseASPP.model-12000')
+    saver.restore(sess, './checkpoint/denseASPP.model-6000')
 
     #ckpt = tf.train.get_checkpoint_state(saved_ckpt_path)
     #if ckpt and ckpt.model_checkpoint_path:
@@ -67,10 +69,11 @@ with tf.Session() as sess:
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
     for i in range(2):
-        b_image_0, b_image, b_anno, b_filename = sess.run([image_batch, anno_batch, filename])
+        b_image_0, b_image, b_anno, b_filename = sess.run([image_batch_0, image_batch, anno_batch, filename])
 
         pred = sess.run(prediction, feed_dict={x: b_image, y: b_anno})
 
+        mIoU_val, IoU_val = Utils.cal_batch_mIoU(pred, b_anno, CLASSES)
         # save raw image, annotation, and prediction
         pred = pred.astype(np.uint8)
         b_anno = b_anno.astype(np.uint8)
@@ -92,7 +95,8 @@ with tf.Session() as sess:
         anno.save(os.path.join(saved_prediction, basename + '_anno.png'))
         pred.save(os.path.join(saved_prediction, basename + '_pred.png'))
 
-        print("%s.png: prediction saved in %s" % (basename, saved_prediction))
+        print("%s.png: prediction saved in %s, mIoU value is %.2f" % (basename, saved_prediction, mIoU_val))
+        print(IoU_val)
 
 
     coord.request_stop()

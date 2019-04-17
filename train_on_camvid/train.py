@@ -8,9 +8,10 @@ import os
 import input_data
 import model.denseASPP as denseASPP
 import model.densenet as DenseNet
+import utils.utils as Utils
 
 
-MAX_STEPS = 20000
+MAX_STEPS = 30000
 CLASSES = denseASPP.CLASSES
 HEIGHT = input_data.HEIGHT
 WIDTH = input_data.WIDTH
@@ -22,10 +23,12 @@ saved_ckpt_path = './checkpoint/'
 saved_summary_train_path = './summary/train/'
 saved_summary_test_path = './summary/test/'
 
-initial_lr = 0.002
+initial_lr = 0.001
 
-
-weights = [0.2595, 0.1826, 4.5640, 0.1417, 0.9051, 0.3826, 9.6446, 1.8418, 0.6823, 6.2478, 7.3614, 0.02]
+#      ['Sky', 'Building', 'Pole', 'Road', 'Pavement', 'Tree', 'SignSymbol', 'Fence', 'Car', 'Pedestrian', 'Bicyclist','Background']
+# weights = [0.2595, 0.1826, 4.5640, 0.1417, 0.9051, 0.3826, 9.6446, 1.8418, 0.6823, 6.2478, 7.3614, 0.02]
+# weights = [0.8, 0.8, 1.1, 0.8, 0.9, 0.8, 1.2, 1.0, 0.9, 1.1, 1.1, 0.8]
+weights = [0.4, 0.8, 2.0, 0.4, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0]
 
 def weighted_loss(logits, labels, num_classes, head=None):
     """re-weighting"""
@@ -83,19 +86,15 @@ with tf.name_scope('learning_rate'):
 
 optimizer = tf.train.AdamOptimizer(lr).minimize(loss_all)
 
-'''
+
 with tf.name_scope("mIoU"):
     softmax = tf.nn.softmax(logits, axis=-1)
     predictions = tf.argmax(logits, axis=-1, name='predictions')
-    mIoU_train, update_train = tf.metrics.mean_iou(y, predictions, CLASSES, name='mIoU_train')
-    running_train_vars = tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope='mIoU_train')
-    running_train_vars_init = tf.variables_initializer(var_list=running_train_vars)
-    tf.summary.scalar('mIoU_train', mIoU_train)
-    mIoU_test, update_test = tf.metrics.mean_iou(y, predictions, CLASSES, name='mIoU_test')
-    running_test_vars = tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope='mIoU_test')
-    running_test_vars_init = tf.variables_initializer(var_list=running_test_vars)
-    tf.summary.scalar('mIoU_test', mIoU_test)
-'''
+
+    train_mIoU = tf.Variable(0, dtype=tf.float32)
+    tf.summary.scalar('train_mIoU', train_mIoU)
+    test_mIoU = tf.Variable(0, dtype=tf.float32)
+    tf.summary.scalar('test_mIoU',test_mIoU)
 
 merged = tf.summary.merge_all()
 
@@ -142,21 +141,22 @@ with tf.Session() as sess:
         test_summary = sess.run(merged, feed_dict={x: b_image_test, y: b_anno_test, keep_prob: 1.0})
         test_summary_writer.add_summary(test_summary, i)
 
-        train_loss_val_all, train_loss_val = sess.run([loss_all, loss], feed_dict={x: b_image, y: b_anno, keep_prob: 1.0})
-        test_loss_val_all, test_loss_val = sess.run([loss_all, loss], feed_dict={x: b_image_test, y: b_anno_test, keep_prob: 1.0})
+        pred_train, train_loss_val_all, train_loss_val = sess.run([predictions, loss_all, loss], feed_dict={x: b_image, y: b_anno, keep_prob: 1.0})
+        pred_test, test_loss_val_all, test_loss_val = sess.run([predictions, loss_all, loss], feed_dict={x: b_image_test, y: b_anno_test, keep_prob: 1.0})
 
-        '''
-        sess.run(update_train, feed_dict={x: b_image, y: b_anno })
-        sess.run(update_test, feed_dict={x: b_image_test, y: b_anno_test})
-        train_mIoU_val = sess.run(mIoU_train)
-        test_mIoU_val = sess.run(mIoU_test)
-        '''
+
+        train_mIoU_val, train_IoU_val = Utils.cal_batch_mIoU(pred_train ,b_anno, CLASSES)
+        test_mIoU_val, test_IoU_val = Utils.cal_batch_mIoU(pred_test ,b_anno_test, CLASSES)
+
+        sess.run(tf.assign(train_mIoU, train_mIoU_val))
+        sess.run(tf.assign(test_mIoU, test_mIoU_val))
 
         learning_rate = sess.run(lr)
 
         if i % 10 == 0:
-            print("train step: %d, learning rate: %f, train loss all: %f, train loss: %f, test loss all: %f, test loss: %f" %(i, learning_rate, train_loss_val_all, train_loss_val, test_loss_val_all, test_loss_val))
-
+            print("train step: %d, learning rate: %f, train loss all: %f, train loss: %f, train mIoU: %f, test loss all: %f, test loss: %f, test mIoU: %f," %(i, learning_rate, train_loss_val_all, train_loss_val, train_mIoU_val, test_loss_val_all, test_loss_val, test_mIoU_val))
+            print(train_IoU_val)
+            print(test_IoU_val)
         if i % 2000 == 0:
             saver.save(sess, os.path.join(saved_ckpt_path, 'denseASPP.model'), global_step=i)
 
