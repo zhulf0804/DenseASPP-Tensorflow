@@ -16,8 +16,8 @@ tfrecord_file = TFRecord.tfrecord_file
 _NUM_SHARDS = TFRecord._NUM_SHARDS
 HEIGHT = 1024
 WIDTH = 2048
-CROP_HEIGHT = 512
-CROP_WIDTH = 512
+CROP_HEIGHT = 680
+CROP_WIDTH = 680
 
 
 def flip_randomly_left_right_image_with_annotation(image_0_tensor, image_tensor, annotation_tensor):
@@ -66,8 +66,10 @@ def random_crop(batch_image_0, batch_image, batch_anno):
     batch_anno = tf.random_crop(batch_anno, [input_shape[0], CROP_HEIGHT, CROP_WIDTH], seed=seed)
     return batch_image_0, batch_image, batch_anno
     '''
-    x_st = np.random.randint(low=0, high=512)
-    y_st = np.random.randint(low=0, high=1536)
+    max_h = HEIGHT - CROP_HEIGHT
+    max_w = WIDTH - CROP_WIDTH
+    x_st = np.random.randint(low=0, high=max_h)
+    y_st = np.random.randint(low=0, high=max_w)
 
     input_shape = batch_image.get_shape().as_list()
     batch_image_0 = tf.slice(batch_image_0, [0, x_st, y_st, 0], [input_shape[0], CROP_HEIGHT, CROP_WIDTH, 3])

@@ -13,13 +13,13 @@ import utils.utils as Utils
 BATCH_SIZE = 4
 CROP_HEIGHT = input_data.CROP_HEIGHT
 CROP_WIDTH = input_data.CROP_WIDTH
-CLASSES = 20
+CLASSES = DenseNet.CLASSES
 CHANNELS = 3
 MAX_STEPS = 80*3000
 # 6000 steps for one epoch
 KEEP_PROB = 0.8
 
-initial_lr = 3e-4
+initial_lr = 1e-4
 weight_decay = 1e-5
 
 saved_ckpt_path = './checkpoint/'
@@ -51,18 +51,18 @@ def weighted_loss(logits, labels, num_classes, head=None, ignore=19):
 
 def cal_loss(logits, labels):
 
-    loss_weight = [1.0 for i in range(19)]
-    loss_weight.append(0.02)
-    #CLASS_NAMES = ['road', 'sidewalk', 'building', 'wall', 'fence', 'pole', 'traffic light', 'traffic sign', 'vegetation', 'terrain', 'sky', 'person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle', 'background']
+    #loss_weight = [1.0 for i in range(19)]
+
+    #CLASS_NAMES = ['road', 'sidewalk', 'building', 'wall', 'fence', 'pole', 'traffic light', 'traffic sign', 'vegetation', 'terrain', 'sky', 'person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle']
 
     '''
     loss_weight = [0.0121096, 0.07337357, 0.0195617, 0.68122994, 0.50893832, 0.3637758, 2.14864449, \
                    0.80990625, 0.02802981, 0.3856194,  0.11109209, 0.36627791, 3.30425387, 0.06383219, \
-                   1.66934974, 1.89835499, 1.91699846, 4.52550817, 1.07868993, 0.03445375]
+                   1.66934974, 1.89835499, 1.91699846, 4.52550817, 1.07868993]
     '''
     loss_weight = [1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, \
                    1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, \
-                   1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                   1.0, 1.0, 1.0, 1.0, 1.0]
     loss_weight = np.array(loss_weight)
 
     labels = tf.cast(labels, tf.int32)
@@ -150,15 +150,23 @@ with tf.Session() as sess:
         pred_train, train_loss_val_all, train_loss_val = sess.run([predictions, loss_all, loss], feed_dict={x: b_image, y: b_anno, keep_prob: 1.0})
         pred_test, test_loss_val_all, test_loss_val = sess.run([predictions, loss_all, loss], feed_dict={x: b_image_test, y: b_anno_test, keep_prob: 1.0})
 
-        train_mIoU_val, train_IoU_val = Utils.cal_batch_mIoU(pred_train, b_anno, CLASSES)
-        test_mIoU_val, test_IoU_val = Utils.cal_batch_mIoU(pred_test, b_anno_test, CLASSES)
 
-        sess.run(tf.assign(train_mIoU, train_mIoU_val))
-        sess.run(tf.assign(test_mIoU, test_mIoU_val))
 
         learning_rate = sess.run(lr)
 
         if i % 10 == 0:
+            print(
+                "train step: %d, learning rate: %f, train loss all: %f, train loss: %f, test loss all: %f, test loss: %f," % (
+                    i, learning_rate, train_loss_val_all, train_loss_val, test_loss_val_all, test_loss_val))
+
+        if i % 200 == 0:
+
+            train_mIoU_val, train_IoU_val = Utils.cal_batch_mIoU(pred_train, b_anno, CLASSES)
+            test_mIoU_val, test_IoU_val = Utils.cal_batch_mIoU(pred_test, b_anno_test, CLASSES)
+
+            sess.run(tf.assign(train_mIoU, train_mIoU_val))
+            sess.run(tf.assign(test_mIoU, test_mIoU_val))
+
             print(
                 "train step: %d, learning rate: %f, train loss all: %f, train loss: %f, train mIoU: %f, test loss all: %f, test loss: %f, test mIoU: %f" % (
                 i, learning_rate, train_loss_val_all, train_loss_val, train_mIoU_val, test_loss_val_all, test_loss_val, test_mIoU_val))

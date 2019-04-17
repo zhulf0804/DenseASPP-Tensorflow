@@ -7,7 +7,7 @@ from PIL import Image
 import os
 import glob
 
-CLASSES_NAME = ['Sky', 'Building', 'Pole', 'Road', 'Pavement', 'Tree', 'SignSymbol', 'Fence', 'Car', 'Pedestrian', 'Bicyclist','Background']
+CLASSES_NAME = ['Sky', 'Building', 'Pole', 'Road', 'Pavement', 'Tree', 'SignSymbol', 'Fence', 'Car', 'Pedestrian', 'Bicyclist']
 
 
 def classes_core(dir):

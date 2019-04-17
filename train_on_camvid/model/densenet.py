@@ -6,7 +6,7 @@ import tensorflow as tf
 import numpy as np
 import math
 
-CLASSES = 12
+CLASSES = 11
 dense_blocks_num = 4
 k = 32
 L = 121
