@@ -76,6 +76,7 @@ def denseASPP(input, keep_prob, train=True):
 
     with tf.name_scope("densenet_121"):
         input = densenet.densenet_121(input, keep_prob, train)
+
     with tf.name_scope("denseASPP"):
         input = densenet.bn_layer(input, train)
         input = denseASPP_block(input, train, keep_prob)
@@ -91,9 +92,10 @@ def denseASPP(input, keep_prob, train=True):
         weight_1 = densenet.weight_variable([1, 1, input_shape[-1], CLASSES])
         input = tf.nn.conv2d(input, weight_1, [1, 1, 1, 1], padding='SAME')
 
+
     with tf.name_scope("upsamling"):
         input_shape = input.get_shape().as_list()
-        input = tf.image.resize_bilinear(input, [4*input_shape[1], 4*input_shape[2]])
+        input = tf.image.resize_bilinear(input, [8*input_shape[1], 8*input_shape[2]])
 
 
     '''
@@ -122,19 +124,7 @@ def denseASPP(input, keep_prob, train=True):
                                        [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]],
                                        [1, 2, 2, 1], padding='SAME')
 
-        input_shape = input.get_shape().as_list()
-
-        ####
-        # input = densenet.bn_layer(input, train)
-        # input = tf.nn.relu(input)
-        ####
-
-        weight_2_3 = densenet.weight_variable([2, 2, CLASSES, CLASSES])
-        input = tf.nn.conv2d_transpose(input, weight_2_3,
-                                       [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]],
-                                       [1, 2, 2, 1], padding='SAME')
     '''
-
     output = input
     return output
 

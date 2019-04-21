@@ -10,8 +10,8 @@ CLASSES = 11
 dense_blocks_num = 4
 k = 32
 L = 121
-#layers = [6, 12, 24, 16]
-layers = [3, 6, 12, 8]
+layers = [6, 12, 24, 16]
+#layers = [3, 6, 12, 8]
 
 '''
 layers * 2  + (dense_blocks_num - 1) + 1(init) + 1(fc)  
@@ -79,13 +79,14 @@ def dense_block(input, k, layers_num, train, keep_prob):
     '''
     input_shape = input.get_shape().as_list()
     k0 = input_shape[-1]
-    output = input
+
     for i in range(1, layers_num + 1):
         #print(i)
         with tf.name_scope("layer_%d" % i):
             output = dense_block_layer(input, k, k0, i, train, keep_prob)
             input = tf.concat(values=[input, output], axis=-1)
-    return output
+
+    return input
 
 def transition_layer(input, train, keep_prob, rate, pool=True):
     """
@@ -109,7 +110,7 @@ def transition_layer(input, train, keep_prob, rate, pool=True):
 
 def densenet_121(input, keep_prob, train):
     '''
-    densenet: k = 12, L = 40
+    densenet: k = 32, L = 121
     :param input:
     :param train:
     :return:
@@ -127,12 +128,11 @@ def densenet_121(input, keep_prob, train):
         for i in range(1, 1 + dense_blocks_num):
             with tf.name_scope("dense_block_%d" % i):
                 input = dense_block(input, k, layers[i-1], train, keep_prob)
-                if i == dense_blocks_num - 3:
+
+                if i == dense_blocks_num - 2:
                     input = transition_layer(input, train, keep_prob, rate=2, pool=False)
-                elif i == dense_blocks_num - 2:
-                    input = transition_layer(input, train, keep_prob, rate=4, pool=False)
                 elif i == dense_blocks_num - 1:
-                    input = transition_layer(input, train, keep_prob, rate=8, pool=False)
+                    input = transition_layer(input, train, keep_prob, rate=4, pool=False)
                 elif i == dense_blocks_num:
                     continue
                 else:
