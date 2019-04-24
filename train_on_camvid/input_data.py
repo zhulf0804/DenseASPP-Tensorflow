@@ -192,7 +192,7 @@ def read_and_decode(filelist):
 
     return image, anno, filename
 
-def read_batch(batch_size, type = 'train'):
+def read_batch(batch_size, type = 'train', shuffle=True):
     filelist_train = [os.path.join(tfrecord_file, 'image_%s_%05d-of-%05d.tfrecord' % ('train', shard_id, _NUM_SHARDS - 1)) for shard_id in range(_NUM_SHARDS)]
     filelist_val = [os.path.join(tfrecord_file, 'image_%s_%05d-of-%05d.tfrecord' % ('val', shard_id, _NUM_SHARDS - 1)) for shard_id in range(_NUM_SHARDS)]
     filelist_test = [os.path.join(tfrecord_file, 'image_%s_%05d-of-%05d.tfrecord' % ('test', shard_id, _NUM_SHARDS - 1)) for shard_id in range(_NUM_SHARDS)]
@@ -213,7 +213,10 @@ def read_batch(batch_size, type = 'train'):
     print(filelist)
     image, anno, filename = read_and_decode(filelist)
 
-    image_batch, anno_batch, filename = tf.train.shuffle_batch([image, anno, filename], batch_size=batch_size, capacity=128, min_after_dequeue=64, num_threads=2)
+    if shuffle:
+        image_batch, anno_batch, filename = tf.train.shuffle_batch([image, anno, filename], batch_size=batch_size, capacity=128, min_after_dequeue=64, num_threads=2)
+    else:
+        image_batch, anno_batch, filename = tf.train.batch([image, anno, filename], batch_size=batch_size, capacity=128, num_threads=1)
 
     # print(image_batch, anno_batch)
 

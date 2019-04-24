@@ -18,7 +18,7 @@ WIDTH = 480
 CLASSES = DenseNet.CLASSES
 saved_ckpt_path = './checkpoint/'
 saved_prediction = './pred/'
-prediction_on = 'train' # 'train', 'val' or 'test'
+prediction_on = 'test' # 'train', 'val' or 'test'
 
 classes = ['Sky', 'Building', 'Pole', 'Road', 'Pavement', 'Tree', 'SignSymbol', 'Fence', 'Car', 'Pedestrian', 'Bicyclist','Background']
 cmap = np.array([[128, 128, 128],
@@ -68,7 +68,7 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     saver = tf.train.Saver()
 
-    saver.restore(sess, './checkpoint/denseASPP.model-20000')
+    saver.restore(sess, './checkpoint/denseASPP.model-38000')
 
     #ckpt = tf.train.get_checkpoint_state(saved_ckpt_path)
     #if ckpt and ckpt.model_checkpoint_path:

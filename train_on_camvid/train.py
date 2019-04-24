@@ -11,13 +11,13 @@ import model.densenet as DenseNet
 import utils.utils as Utils
 
 
-MAX_STEPS = 30000
+MAX_STEPS = 40000
 CLASSES = denseASPP.CLASSES
 HEIGHT = input_data.HEIGHT
 WIDTH = input_data.WIDTH
 BATCH_SIZE = 4
 scale = 1e-5
-KEEP_PROB = 0.8
+KEEP_PROB = 0.9
 
 saved_ckpt_path = './checkpoint/'
 saved_summary_train_path = './summary/train/'
@@ -26,9 +26,9 @@ saved_summary_test_path = './summary/test/'
 initial_lr = 0.001
 
 #      ['Sky', 'Building', 'Pole', 'Road', 'Pavement', 'Tree', 'SignSymbol', 'Fence', 'Car', 'Pedestrian', 'Bicyclist']
-# weights = [0.2595, 0.1826, 4.5640, 0.1417, 0.9051, 0.3826, 9.6446, 1.8418, 0.6823, 6.2478, 7.3614]
-# weights = [0.8, 0.8, 1.1, 0.8, 0.9, 0.8, 1.2, 1.0, 0.9, 1.1, 1.1, 0.8]
-weights = [0.4, 0.8, 2.0, 0.4, 1.0, 1.0, 4.0, 2.0, 1.0, 4.0, 4.0]
+
+weights = [6.125, 4.226, 34.69, 3.4, 13.663, 7.869, 32.22, 28.248, 14.47, 38.026, 37.092] #ENet_weighting
+
 
 def weighted_loss(logits, labels, num_classes, head=None):
     """re-weighting"""
@@ -165,7 +165,7 @@ with tf.Session() as sess:
             saver.save(sess, os.path.join(saved_ckpt_path, 'denseASPP.model'), global_step=i)
 
         if i != 0 and i % 4000 == 0:
-            sess.run(tf.assign(lr, 0.8 * lr))
+            sess.run(tf.assign(lr, 0.7 * lr))
 
 
     coord.request_stop()

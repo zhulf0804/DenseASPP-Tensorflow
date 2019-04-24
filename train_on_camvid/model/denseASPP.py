@@ -85,46 +85,56 @@ def denseASPP(input, keep_prob, train=True):
         input_shape = input.get_shape().as_list()
 
         ####
-        #input = densenet.bn_layer(input, train)
-        #input = tf.nn.relu(input)
+        input = densenet.bn_layer(input, train)
+        input = tf.nn.relu(input)
         ####
 
         weight_1 = densenet.weight_variable([1, 1, input_shape[-1], CLASSES])
         input = tf.nn.conv2d(input, weight_1, [1, 1, 1, 1], padding='SAME')
 
-
+    '''
     with tf.name_scope("upsamling"):
         input_shape = input.get_shape().as_list()
         input = tf.image.resize_bilinear(input, [8*input_shape[1], 8*input_shape[2]])
 
-
     '''
+
     with tf.name_scope("upsampling"):
 
         input_shape = input.get_shape().as_list()
-
-        ####
-        input = densenet.bn_layer(input, train)
-        #input = tf.nn.relu(input)
-        ####
-
         weight_2_1 = densenet.weight_variable([2, 2, CLASSES, CLASSES])
         input = tf.nn.conv2d_transpose(input, weight_2_1, [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]], [1, 2, 2, 1], padding='SAME')
 
-
-        input_shape = input.get_shape().as_list()
-
         ####
         input = densenet.bn_layer(input, train)
-        # input = tf.nn.relu(input)
+        input = tf.nn.relu(input)
         ####
 
+        input_shape = input.get_shape().as_list()
         weight_2_2 = densenet.weight_variable([2, 2, CLASSES, CLASSES])
         input = tf.nn.conv2d_transpose(input, weight_2_2,
                                        [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]],
                                        [1, 2, 2, 1], padding='SAME')
 
-    '''
+        ####
+        input = densenet.bn_layer(input, train)
+        input = tf.nn.relu(input)
+        ####
+
+        input_shape = input.get_shape().as_list()
+        weight_2_3 = densenet.weight_variable([2, 2, CLASSES, CLASSES])
+        input = tf.nn.conv2d_transpose(input, weight_2_3,
+                                       [input_shape[0], input_shape[1] * 2, input_shape[2] * 2, input_shape[3]],
+                                       [1, 2, 2, 1], padding='SAME')
+
+        ####
+        #input = densenet.bn_layer(input, train)
+        #input = tf.nn.relu(input)
+        ####
+
+
+
+
     output = input
     return output
 
